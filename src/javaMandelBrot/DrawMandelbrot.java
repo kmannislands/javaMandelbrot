@@ -36,7 +36,6 @@ public class DrawMandelbrot {
     this.FRAME = FRAME;
     this.outDir = outDir;
     this.i = i;
-    this.resolution = resolution;
   }
   
   /**

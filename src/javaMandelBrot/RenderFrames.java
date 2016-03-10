@@ -1,56 +1,223 @@
-import objectdraw.*;
-import java.awt.Color;
+package javaMandelBrot;
+
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import javax.imageio.ImageIO;
+
+import javafx.embed.swing.SwingFXUtils;
+import javafx.scene.image.PixelWriter;
+import javafx.scene.image.WritableImage;
+import javafx.scene.paint.Color;
 
 /**
- * DrawArc draws a circle at a given location.
- * upon started on as a thread, e.g.
- * Thread arc = new DrawArc(<params>);
- * arc.start();
- * the circle moves diagonally down and back up the screen.
+ * RenderFrames is the class that controls the rendering
+ * and then drawing to Images of Mandelbrot frames.
  */
 public class RenderFrames extends Thread {
-  private final double xc = .1015; // x-center coordinates on imaginary plane
-  private final double yc = -.633; // y-center coordinates on imaginary plane
-  private double initScale = .032; // initial scale factor
-  private int resolution; // screen is this wide by the high
-  private final int maxIter = 255; // logical enough for grayscale
-  private final int RENDER_FRAMES; // number of frames to render
-  private int offset = 0;// progress through rendering threads
-  private ArrayList<Mandelbrot> FRAME_BUFFER;
-  private int numPerThread;
-  private ColorMap tempMap = new ColorMap("mandel.txt");
+	// fixed variables
+	private final double xc = .1015; // x-center coordinates on imaginary plane
+	private final double yc = -.633; // y-center coordinates on imaginary plane
+	private final int maxIter = 255; // max iterations to escape
+	private int resolution = 512; // screen is this wide by the high
+	
+	// variables passed in from GUI
+	private double initZoom; // initial scale factor
+	private double endZoom;
+	private ColorMap colorMap; // file path of color map to use
+	private String prefix; // the prefix to use in naming out
+  
+	// The HashMap containing all of our Mandelbrot Objects
+	private Map<Integer, Mandelbrot> allMandels = new HashMap<>();
+	// 
+	private ArrayList<Double> zooms;
+	
+	public String[] returnInfo() {
+		String[] renderInfo = new String[4];
+		renderInfo[0] = "Prefix: " + prefix;
+		
+		return renderInfo;
+	}
+	
+	public void removeMand(Integer key) {
+		allMandels.remove(key);
+	}
+	
+	private int numFrames() {
+		zooms = new ArrayList<>();
+		int iters = 1;
+		double temp = initZoom;
+		try {
+			while(temp >= endZoom) {
+				zooms.add(new Double(temp));
+				temp /= 2; // each time the zoom doubles, another frame
+				iters++;
+			}
+		} catch(Exception e) {
+			// problem figuring out frame #
+		}
+		return iters;
+	}
 
+	/**
+	 * @param x - x starting location for the arc
+	 * @param y - y starting location for the arc
+	 * @param canvas - the canvas to draw the arc in. Should be
+	 * provided by objectdraw
+	 */
+	public RenderFrames(double initZoom, double endZoom, String prefix, String colorMap) {
+		this.initZoom = initZoom;
+		this.endZoom = endZoom;
+		this.prefix = prefix;
+		this.colorMap = new ColorMap(colorMap);
+	}
+	
+	private String writeOut(Entry<Integer, Mandelbrot> thisEntry) {
+		String statusStr = null;
+		
+		// get our 2D color array
+		Color[][] thisPic = thisEntry.getValue().getMandel();
+		// and this Mandel's key
+		Integer thisKey = thisEntry.getKey();
+		
+		// initialize JavaFX write stuff
+		WritableImage image = new WritableImage(resolution, resolution);
+		PixelWriter pixWrite = image.getPixelWriter();
+		
+		try {
+			for (int i = 0; i < resolution; i++) {
+				for (int j = 0; j < resolution; j++) {
+					int s = resolution - 1 - j;
+					Color thisColor = thisPic[i][s];
+					
+					// actually write the color to the image
+					pixWrite.setColor(i, s, thisColor);
+				}
+			}
+		} catch (Exception e) {
+			statusStr = "Problem creating Image from frame #"
+					+ thisKey + ".";
+			return statusStr;
+		}
+		
+		// if we've gotten here, we have an image ready to write
+		// TODO figure out file path solution for real
+		String filePath = "/users/kieranjarrett/Documents/" + prefix + thisKey + ".png";
+		
+		FileOutputStream os = null;
+		try {
+			BufferedImage bi = new BufferedImage(resolution,
+					resolution, BufferedImage.TYPE_INT_ARGB);
+			
+			// convert our image from FX to awt
+			SwingFXUtils.fromFXImage(image, bi);
+			
+			//graph.translate(x, y);
+			ImageIO.write(bi, "PNG", new File(filePath));
+			
+		} catch (Exception e) {
+			statusStr = "Couldn't write out frames to cache.";
+		} finally {
+			try {
+				os.close();
+			} catch (Exception e) {
+				statusStr = "Closing problems! Proceed with caution.";
+			}
+		}
+		
+		return statusStr;
+	}
+	
+	public RenderFrames() {
+		// no arguments for test case
+		System.out.print("Starting test of frame render.\n\n");
+		this.initZoom = .001;
+		this.endZoom = 0.0;
+		this.prefix = "test-frame-";
+		String testMap = "/users/kieranjarrett/Documents/CSE11/Mandelbrot/mandel.txt";
+		this.colorMap = new ColorMap(testMap);
+		
+		test();
+	}
+	
+	public String test() {
+		String statusStr = null;
+		
+		try {
+			Mandelbrot thisMand = new Mandelbrot(xc, yc, initZoom, resolution, 
+				  maxIter, colorMap);
+		
+			thisMand.run(); // start rendering the Mandelbrot
+			allMandels.put(new Integer(1), thisMand);	
+			statusStr = writeOut(allMandels.entrySet().iterator().next());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return statusStr;
+	}
+	
   /**
-   * @param x - x starting location for the arc
-   * @param y - y starting location for the arc
-   * @param canvas - the canvas to draw the arc in. Should be
-   * provided by objectdraw
+   * 
    */
-  public RenderFrames(int RENDER_FRAMES, int numPerThread,
-                      int index, ArrayList<Mandelbrot> FRAME_BUFFER , int resolution) {
-    this.numPerThread = numPerThread;
-    this.offset = numPerThread * index;
-    this.RENDER_FRAMES = RENDER_FRAMES;
-    this.FRAME_BUFFER = FRAME_BUFFER;
-    this.resolution = resolution;
-  }
-
-  /**
-   * Executed when the thread starts and runs indefinitly, moving the arc
-   * across the screen.
-   */
+  @Override
   public void run() {
-      double scale;
-      for (int i = offset; i < (offset + numPerThread); i++) {
-        if (i != 0 ) scale = initScale / (2.0 * i); // zoom in by 2x in each frame
-        else scale = initScale; // don't divide by 0!
-        FRAME_BUFFER.add(new Mandelbrot(xc, yc, scale, resolution, maxIter, tempMap));
-        long mandelTime = FRAME_BUFFER.get(i).getTime();
-        System.out.println("Returned Mandel #" + (i + 1)
-                           + " in " + mandelTime + "ns");
-      }
-      return;
+	  // figure out number of frames
+	  int total = numFrames(); // total number of Mandelbrot
+ 
+	  // iterate through all the zooms we'll need
+	  int i = 1; // count # Mandelbrot's made
+	  Iterator<Double> zoomIter = zooms.iterator();
+	  
+	  while(zoomIter.hasNext()) {
+		  // START ALL MAIN DRAW THREADS
+		  Integer thisKey = new Integer(i);
+		  double thisZoom = zoomIter.next().doubleValue();
+		  Mandelbrot thisMand = new Mandelbrot(xc, yc, thisZoom, resolution, 
+				  maxIter, colorMap);
+		  thisMand.run(); // start rendering the Mandelbrot
+		  
+		  // we'll keep all the Mandelbrot's in this array as they run
+		  allMandels.put(thisKey, thisMand);
+		  i++;
+	  }
+	  
+	  // okay, so all the Mandelbrots have started rendering
+	  // this part checks which ones are done, draws and then
+	  // removes them
+	  while (!allMandels.isEmpty()) {
+		  Iterator<Entry<Integer, Mandelbrot>> progressCheck =
+				  allMandels.entrySet().iterator();
+		  while (progressCheck.hasNext()) {
+			  Entry<Integer, Mandelbrot> thisMand =
+					  progressCheck.next();
+			  if (thisMand.getValue().isFinished()) {
+				  // if this mandelbrot is done drawing
+				  System.out.println("Mandel #" + thisMand.getKey()
+						  + " finished in: " + thisMand.getValue().getTime()
+						  + " ns \n\n");
+				  
+				  // draw the Mandelbrot
+				  // TODO insert draw function call
+				  String isWrite = writeOut(thisMand);
+				  if (isWrite != null) {
+					  // print the write problem
+					  System.out.println(isWrite);
+				  }
+				  
+				  // remove it from the array
+				  allMandels.remove(thisMand.getKey());
+			  } else {
+				  // no finished mandelbrots
+				  continue;
+			  }
+		  }
+	  }
   }
 
 }

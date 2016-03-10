@@ -26,6 +26,7 @@
  *  tan(a)       = -6.685231390246571E-6 + 1.0000103108981198i
  *
  ******************************************************************************/
+package javaMandelBrot;
 
 public class Complex {
     private final double re;   // the real part
