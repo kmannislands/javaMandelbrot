@@ -47,7 +47,7 @@ public class ColorMap {
 		try { 
 			for (int j = 0; j < stripWidth; j++) {
 				for (int i = 0; i < tempMap.length; i++) {
-					System.out.println("(" + j + ", " + i + ")");
+					//System.out.println("(" + j + ", " + i + ")");
 					Color thisColor = tempMap[i];
 				
 					// actually write the color to the image

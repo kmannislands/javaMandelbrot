@@ -130,6 +130,8 @@ public class Mandelbrot implements Runnable {
   		
   		endTime = System.nanoTime();
   		duration = (endTime - startTime);
+  		System.out.println("Finished Mandel for scale: " + size
+  				+ " in " + duration/1000000000 + "s");
   	}
 	
   	public long getTime() {

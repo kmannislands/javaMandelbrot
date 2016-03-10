@@ -8,6 +8,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Stream;
 
 import javax.imageio.ImageIO;
 
@@ -20,6 +23,7 @@ import javafx.scene.paint.Color;
  * RenderFrames is the class that controls the rendering
  * and then drawing to Images of Mandelbrot frames.
  */
+
 public class RenderFrames extends Thread {
 	// fixed variables
 	private final double xc = .1015; // x-center coordinates on imaginary plane
@@ -35,8 +39,9 @@ public class RenderFrames extends Thread {
   
 	// The HashMap containing all of our Mandelbrot Objects
 	private Map<Integer, Mandelbrot> allMandels = new HashMap<>();
-	// 
+	// This arraylist contains all of the zoom constants to use
 	private ArrayList<Double> zooms;
+	private int numFrames = 0;
 	
 	public String[] returnInfo() {
 		String[] renderInfo = new String[4];
@@ -78,13 +83,13 @@ public class RenderFrames extends Thread {
 		this.colorMap = new ColorMap(colorMap);
 	}
 	
-	private String writeOut(Entry<Integer, Mandelbrot> thisEntry) {
+	private String writeOut(Entry<Integer, Mandelbrot> entry) {
 		String statusStr = null;
-		
+		Mandelbrot thisMandl = entry.getValue();
 		// get our 2D color array
-		Color[][] thisPic = thisEntry.getValue().getMandel();
+		Color[][] thisPic = thisMandl.getMandel();
 		// and this Mandel's key
-		Integer thisKey = thisEntry.getKey();
+		Integer thisKey = entry.getKey();
 		
 		// initialize JavaFX write stuff
 		WritableImage image = new WritableImage(resolution, resolution);
@@ -108,7 +113,8 @@ public class RenderFrames extends Thread {
 		
 		// if we've gotten here, we have an image ready to write
 		// TODO figure out file path solution for real
-		String filePath = "/users/kieranjarrett/Documents/" + prefix + thisKey + ".png";
+		String filePath = "/users/kieranjarrett/Documents/cache/"
+				+ prefix + thisKey + ".png";
 		
 		FileOutputStream os = null;
 		try {
@@ -168,56 +174,51 @@ public class RenderFrames extends Thread {
   @Override
   public void run() {
 	  // figure out number of frames
-	  int total = numFrames(); // total number of Mandelbrot
+	  this.numFrames = numFrames(); // total number of Mandelbrots
  
 	  // iterate through all the zooms we'll need
 	  int i = 1; // count # Mandelbrot's made
 	  Iterator<Double> zoomIter = zooms.iterator();
 	  
 	  while(zoomIter.hasNext()) {
-		  // START ALL MAIN DRAW THREADS
+		  // FILL OUT
 		  Integer thisKey = new Integer(i);
 		  double thisZoom = zoomIter.next().doubleValue();
 		  Mandelbrot thisMand = new Mandelbrot(xc, yc, thisZoom, resolution, 
 				  maxIter, colorMap);
-		  thisMand.run(); // start rendering the Mandelbrot
 		  
 		  // we'll keep all the Mandelbrot's in this array as they run
 		  allMandels.put(thisKey, thisMand);
 		  i++;
 	  }
-	  
-	  // okay, so all the Mandelbrots have started rendering
-	  // this part checks which ones are done, draws and then
-	  // removes them
-	  while (!allMandels.isEmpty()) {
-		  Iterator<Entry<Integer, Mandelbrot>> progressCheck =
+	  ExecutorService pool = Executors.newWorkStealingPool(numFrames);
+	  try {
+		  // Now, all the Mandelbrots are in our HashMap
+		  // so let's add them to the pool and start them
+		  Iterator<Entry<Integer, Mandelbrot>> starter =
 				  allMandels.entrySet().iterator();
-		  while (progressCheck.hasNext()) {
+		  
+		  while (starter.hasNext()) {
 			  Entry<Integer, Mandelbrot> thisMand =
-					  progressCheck.next();
-			  if (thisMand.getValue().isFinished()) {
-				  // if this mandelbrot is done drawing
-				  System.out.println("Mandel #" + thisMand.getKey()
-						  + " finished in: " + thisMand.getValue().getTime()
-						  + " ns \n\n");
-				  
-				  // draw the Mandelbrot
-				  // TODO insert draw function call
-				  String isWrite = writeOut(thisMand);
-				  if (isWrite != null) {
-					  // print the write problem
-					  System.out.println(isWrite);
-				  }
-				  
-				  // remove it from the array
-				  allMandels.remove(thisMand.getKey());
-			  } else {
-				  // no finished mandelbrots
-				  continue;
-			  }
+					  starter.next();
+			  // add Mandelbrot to pool
+			  pool.submit(thisMand.getValue());
 		  }
+	  } catch (Exception e) {
+		  // TODO Auto-generated catch block
+		  e.printStackTrace();
 	  }
+	  //System.out.println("Started all threads!");
+	  
+	  String statusStr = writeOut(thisMand);
+	  
+	  
+	  
+			  
+	  /*System.out.println("Mandel #" + thisMand.getKey()
+			  + " finished in: " + 
+			  (thisMand.getValue().getTime()) /1000000000
+			  + "s \n\n");*/
   }
 
 }
