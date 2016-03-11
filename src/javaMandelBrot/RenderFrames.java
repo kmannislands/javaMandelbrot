@@ -6,10 +6,13 @@ import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import javax.imageio.ImageIO;
@@ -83,13 +86,11 @@ public class RenderFrames extends Thread {
 		this.colorMap = new ColorMap(colorMap);
 	}
 	
-	private String writeOut(Entry<Integer, Mandelbrot> entry) {
-		String statusStr = null;
-		Mandelbrot thisMandl = entry.getValue();
-		// get our 2D color array
-		Color[][] thisPic = thisMandl.getMandel();
+	private String writeOut(MandArray thisMandl) {
+		Color[][] thisPic = thisMandl.pic;
 		// and this Mandel's key
-		Integer thisKey = entry.getKey();
+		Integer thisKey = thisMandl.key;
+		String statusStr = null;
 		
 		// initialize JavaFX write stuff
 		WritableImage image = new WritableImage(resolution, resolution);
@@ -140,34 +141,6 @@ public class RenderFrames extends Thread {
 		return statusStr;
 	}
 	
-	public RenderFrames() {
-		// no arguments for test case
-		System.out.print("Starting test of frame render.\n\n");
-		this.initZoom = .001;
-		this.endZoom = 0.0;
-		this.prefix = "test-frame-";
-		String testMap = "/users/kieranjarrett/Documents/CSE11/Mandelbrot/mandel.txt";
-		this.colorMap = new ColorMap(testMap);
-		
-		test();
-	}
-	
-	public String test() {
-		String statusStr = null;
-		
-		try {
-			Mandelbrot thisMand = new Mandelbrot(xc, yc, initZoom, resolution, 
-				  maxIter, colorMap);
-		
-			thisMand.run(); // start rendering the Mandelbrot
-			allMandels.put(new Integer(1), thisMand);	
-			statusStr = writeOut(allMandels.entrySet().iterator().next());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return statusStr;
-	}
-	
   /**
    * 
    */
@@ -184,14 +157,17 @@ public class RenderFrames extends Thread {
 		  // FILL OUT
 		  Integer thisKey = new Integer(i);
 		  double thisZoom = zoomIter.next().doubleValue();
-		  Mandelbrot thisMand = new Mandelbrot(xc, yc, thisZoom, resolution, 
+		  Mandelbrot thisMand = new Mandelbrot(thisKey, xc, yc, thisZoom, resolution, 
 				  maxIter, colorMap);
 		  
 		  // we'll keep all the Mandelbrot's in this array as they run
 		  allMandels.put(thisKey, thisMand);
 		  i++;
 	  }
+	  
+	  
 	  ExecutorService pool = Executors.newWorkStealingPool(numFrames);
+	  List<Future<MandArray>> futureFrames = new ArrayList<>();
 	  try {
 		  // Now, all the Mandelbrots are in our HashMap
 		  // so let's add them to the pool and start them
@@ -199,18 +175,69 @@ public class RenderFrames extends Thread {
 				  allMandels.entrySet().iterator();
 		  
 		  while (starter.hasNext()) {
-			  Entry<Integer, Mandelbrot> thisMand =
+			  Entry<Integer, Mandelbrot> thisEntry =
 					  starter.next();
 			  // add Mandelbrot to pool
-			  pool.submit(thisMand.getValue());
+			  futureFrames.add(pool.submit(thisEntry.getValue()));
 		  }
 	  } catch (Exception e) {
-		  // TODO Auto-generated catch block
+		  // Problem starting threads
 		  e.printStackTrace();
+	  }
+	  // cycle through our mandlebrot callable futures
+	  for(Future<MandArray> fut : futureFrames) {
+		  MandArray pic = null;
+		  String str = null;
+		  try {
+			  pic = fut.get();
+			  str = writeOut(pic);
+		  } catch (Exception e) {
+			  System.out.println("Get problem!");
+			  e.printStackTrace();
+		  }
+		  if (str != null)
+			  System.out.println(str);
+		  
 	  }
 	  //System.out.println("Started all threads!");
 	  
-	  String statusStr = writeOut(thisMand);
+/*
+	  String writeStr = null;
+	  try {
+		  // render for up to 30 minutes
+		  System.out.println("Awaiting termination...");
+		  pool.awaitTermination(30, TimeUnit.MINUTES);
+	  } catch (Exception e) {
+		  writeStr = "Render Timed Out! Thanks for hanging in there. Sorry Champ.";
+	  }
+	  System.out.println("Exited try!");
+	  try {
+	  	// and then, iterate through again, writing out
+		  Iterator<Entry<Integer, Mandelbrot>> imageWrite =
+				  allMandels.entrySet().iterator();
+		  long start = System.nanoTime();
+		  int l = 1;
+		  while (imageWrite.hasNext()) {
+			  Entry<Integer, Mandelbrot> thisEntry =
+					  imageWrite.next();
+			  // write out each Mandelbrot
+			  System.out.println("Writing " + l + ".png" );
+			  writeStr = writeOut(thisEntry);
+			  l++;
+		  }
+		  if (writeStr != null) {
+			  System.out.println("Problem writing out Mandelbrot PNG's\n\n"
+					  + writeStr);
+		  } else {
+			  long writeTime = System.nanoTime() - start;
+			  System.out.println("Wrote " + l + " Mandelbrot PNG's"
+					  + " in " + writeTime/1000000000 + "s");
+		  }
+	  } catch (Exception e) {
+		  // TODO Auto-generated catch block
+		  System.out.println("Problem writing out Mandelbrot PNG's");
+		  e.printStackTrace();
+	  }*/
 	  
 	  
 	  

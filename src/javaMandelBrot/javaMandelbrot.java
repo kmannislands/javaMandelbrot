@@ -49,8 +49,8 @@ public class javaMandelbrot extends Application{
 		} else {
 			cacheDir = new File (baseDir.getAbsolutePath() + "/cache");
 			
-			//Steph make the stage here
-			this.start(primaryStage); // start the App
+			//seph make the stage here
+			//this.start(primaryStage); // start the App
 		}
 		
 	}
@@ -69,7 +69,7 @@ public class javaMandelbrot extends Application{
 		}
 		
 		// TODO cretateAlert() method
-		stage.show();
+		//stage.show();
 	}
 	
 	public static void main(String[] args) {

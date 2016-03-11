@@ -1,9 +1,11 @@
 package javaMandelBrot;
 
+import java.util.concurrent.Callable;
+
 import javafx.animation.Interpolator;
 import javafx.scene.paint.Color;
 
-public class Mandelbrot implements Runnable {
+public class Mandelbrot implements Callable<MandArray> {
 	// variables that will be the same for all frames
 	private double xc; // imaginary x-coord
 	private double yc; // imaginary y-coord
@@ -12,9 +14,10 @@ public class Mandelbrot implements Runnable {
   
 	// variables that change by frame
 	private double size; // zoom factor
+	private Integer key; // key for everything
 	
 	// array containing the Mandelbrot information
-	public Color[][] pic; // array containing our mandelbrot frame
+	public MandArray pic; // array containing our mandelbrot frame
 	private ColorMap tempMap;
 
 	// timing stuff, finished boolean
@@ -81,8 +84,9 @@ public class Mandelbrot implements Runnable {
   	 * @param maxIter
   	 * @param tempMap
   	 */
-  	public Mandelbrot(double xc, double yc, double size, int resolution,
+  	public Mandelbrot(Integer key, double xc, double yc, double size, int resolution,
   			int maxIter, ColorMap tempMap) {
+  		this.key = key;
   		this.xc = xc;
   		this.yc = yc;
   		this.size = size;
@@ -94,10 +98,6 @@ public class Mandelbrot implements Runnable {
   	public boolean isFinished() {
   		// check if the Mandelbrot has finished drawing
   		return finished;
-  	}
-
-  	public Color[][] getMandel() {
-  		return pic;
   	}
   	
   	public double progress() {
@@ -113,7 +113,7 @@ public class Mandelbrot implements Runnable {
   		//remove
   		System.out.println("Filling Mandel frame for scale: " + size + "\n\n" );
       
-  		pic = new Color[N][N];
+  		Color[][] temp = new Color[N][N];
   		for (int i = 0; i < N; i++) {
   			for (int j = 0; j < N; j++) {
   				double x0 = xc - size/2 + size*i/N; //x coordinate, in terms of graphics
@@ -123,10 +123,12 @@ public class Mandelbrot implements Runnable {
   				// here's the value 255 we'll map to color
   				int val255 = maxIter - mand(z0); 
   				Color thisColor = tempMap.getColor(val255);
-  				pic[i][N-1-j] = thisColor;
+  				temp[i][N-1-j] = thisColor;
   			}
   			currentRow++;
   		}
+  		
+  		this.pic.pic = temp;
   		
   		endTime = System.nanoTime();
   		duration = (endTime - startTime);
@@ -139,38 +141,11 @@ public class Mandelbrot implements Runnable {
   	}
 
   	@Override
-	public void run() {
+	public MandArray call() throws Exception{
   		// start filling out the Mandel!
 	    this.setMandel(); // fill out the Mandelbrot matrix
+	    
+		return pic;
 	}
-  	
-  	
-  	// old main for testing
-  /*public static void main(String[] args)  {
-    long startTime = System.nanoTime();
-    double xc   = Double.parseDouble(args[0]);
-    double yc   = Double.parseDouble(args[1]);
-    double size = Double.parseDouble(args[2]);
-
-    int N   = 512;   // create N-by-N image
-    int max = 255;   // maximum number of iterations
-
-    /*Picture pic = new Picture(N, N);
-    for (int i = 0; i < N; i++) {
-      for (int j = 0; j < N; j++) {
-        double x0 = xc - size/2 + size*i/N;
-        double y0 = yc - size/2 + size*j/N;
-        Complex z0 = new Complex(x0, y0);
-        int gray = max - mand(z0, max);
-        Color color = new Color(gray, gray, gray);
-        pic.set(i, N-1-j, color);
-      }
-      }*/
-  /*
-    long endTime = System.nanoTime();
-    long duration = (endTime - startTime);
-    System.out.println("Mandelbrot returned in: " + duration);
-    //pic.show();
-  }*/
 
 }
