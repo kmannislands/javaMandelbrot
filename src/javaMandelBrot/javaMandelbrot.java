@@ -37,7 +37,9 @@ import javafx.stage.FileChooser.ExtensionFilter;
  * This is the main class that should contain the GUI
  * implementation, JavaFX application, etc.
  * 
- * 
+ * @author Kieran Mann & Seph Martin
+ * @email kmann@ucsd.edu, jbm002@ucsd.edu
+ * @version 1.2
  */
 
 public class javaMandelbrot extends Application{
@@ -46,14 +48,17 @@ public class javaMandelbrot extends Application{
 	boolean zoomCheck = false;
 	boolean outputCheck = false;
 	
+	animationPlayer thisWindow = null;
+	
 	private File cacheDir;
+	private File exitDir;
 	private double initZoom;
 	private double endZoom;
 	private String prefix;
 	private ColorMap colorMap;
 	//declare global variables
-	public final int HEIGHT = 400; // default height
-	public final int WIDTH = 600; // default width
+	public final int HEIGHT = 600; // default height
+	public final int WIDTH = 780; // default width
 	private Label welcomeLabel; //header
 	private Label selectedAnimation; //"Selected Animation:"
 	private Label setZoom; //"Set Zoom Speed:"
@@ -104,6 +109,9 @@ public class javaMandelbrot extends Application{
 
     	alert.showAndWait();
     }
+    /**
+     * This void sets all of the button actions
+     */
     
     public void addButtonActions() {
     	//load existing mandelbrot
@@ -145,6 +153,7 @@ public class javaMandelbrot extends Application{
 					createAlert("Please Select a Colormap!");
 				}
 				if (colorFile != null) {
+					// create colormap
 					colorMap = new ColorMap(colorFile, cacheDir);
 					statusStr = colorMap.inputMap();
 					if (statusStr != null) {
@@ -171,15 +180,12 @@ public class javaMandelbrot extends Application{
         		// try to get a directory for export
                 try {
                 	selectedDir = loadedDir.showDialog(applicationStage.getOwner());
-                	outputPath.setText(selectedDir.getAbsolutePath()); //updates input path
+                	outputPath.setText(selectedDir.getName()); //updates input path
                 } catch (Exception e1) {
                 	createAlert("Please Select a Directory!");
                 	return;
                 }
-				if (selectedDir != null) {
-					cacheDir = selectedDir;
-					outputPath.setText(cacheDir.getAbsolutePath());
-				}
+					exitDir = selectedDir;
 			}
 			
 		});
@@ -202,6 +208,7 @@ public class javaMandelbrot extends Application{
                 	//return;
                 }
                 try {
+                	// create a file array of just the png's in the cache
                 	File[] dirContents = loadDir.listFiles(new FileFilter() {
                 		@Override
                 		public boolean accept(File file) {
@@ -223,8 +230,9 @@ public class javaMandelbrot extends Application{
                 	
                 }
                 if (!fileList.isEmpty()) {
+                	// if we have a list, sort it by the image suffixes
                 	Collections.sort(fileList, new Comparator<File>() {
-
+                		// custom comparator interface
 						@Override
 						public int compare(File o1, File o2) {
 							// compare two files!
@@ -236,16 +244,40 @@ public class javaMandelbrot extends Application{
 						}
                 		
                 	});
+                	// get a double of our inputted zoom value
                 	double zoomS = 
                 			Double.parseDouble(zoomSpeed.getText()) * 1000;
-                	animationPlayer thisWindow = new animationPlayer(fileList, zoomS);
+                	
+                	// initialize the animation player
+                	thisWindow = new animationPlayer(fileList, zoomS);
                 	
                 } else {
+                	// no images found
                 	createAlert("No images found in folder!");
                 }
 				
 			}
 			
+		});
+		
+		playButton.setOnAction(new EventHandler<ActionEvent>() {
+			//opens directoryChooser
+			@Override
+			public void handle(ActionEvent event) {
+				try {
+					thisWindow.toString();
+				} catch (Exception e) {
+					createAlert("Load an animation to play first!");
+					return;
+				}
+				try {
+					thisWindow.showStage();
+				} catch (Exception e) {
+					createAlert("Problem setting stage. Please load in"
+							+ " cached frames and try again.");
+					return;
+				}
+			}
 		});
 		
 		//fire the save event
@@ -256,10 +288,15 @@ public class javaMandelbrot extends Application{
 				DirectoryChooser loadedDir = new DirectoryChooser();
 				loadedDir.setTitle("Select output Path for mandelbrot set");
         		// try to get a directory for export
-				double initZoom = Double.parseDouble(startDouble.getText());
-				double endZoom = Double.parseDouble(finishDouble.getText());
+				try {
+					double initZoom = Double.parseDouble(startDouble.getText());
+					double endZoom = Double.parseDouble(finishDouble.getText());
+				} catch (Exception e) {
+					createAlert("Enter valid zooms please!");
+					return;
+				}
 				if (initZoom <= endZoom || endZoom == 0.0
-						|| endZoom <= .00001 || initZoom > 3.0) {
+						|| endZoom <= .0000001 || initZoom > 2.0) {
 					// catch bad zoom input
 					createAlert("Please enter valid zoom values!");
 					return;
@@ -279,20 +316,22 @@ public class javaMandelbrot extends Application{
                 	return;
                 }
 				createSuccess("Now rendering your frames. Will take a while."
-						+ "\n\nSit tight and keep an eye on System.out.");
+						+ "\n\n Sit tight and keep an eye on System.out.");
 				try {
-					masterRender.join();
 					t2.setExpanded(true);
+					masterRender.join();
 				} catch(Exception e) {
-					createAlert("Something terrible happened to our render thread./n/n"
-							+ "Perhaps too many render frames.");
+					createSuccess("Done Rendering Frames! /n/n"
+							+ "Select the directory below and hit play.");
 				}
 			}
 			
 		});
     }
 	
+    
 	public javaMandelbrot() {
+		// establish cache directory on construction
 		boolean cache = false;
 		// set the base directory
 		File baseDir = new File(System.getProperty("user.dir"));
@@ -325,7 +364,7 @@ public class javaMandelbrot extends Application{
 	@Override
 	public void start(Stage applicationStage) {
 		this.applicationStage = applicationStage;
-		 applicationStage.setTitle("Mandelbrot Animation Generator");
+		applicationStage.setTitle("Mandelbrot Animation Generator");
 		   GridPane gridPane1 = new GridPane();
 		   GridPane gridPane2 = new GridPane();
 		   gridPane2.setStyle("-fx-background-color: #1d1d1d");
@@ -333,23 +372,23 @@ public class javaMandelbrot extends Application{
 			//application page
 			welcomeLabel = new Label("Welcome, what would you like to do?");
 			selectedAnimation = new Label("Selected Animation: ");
-			setZoom = new Label("Set Zoom Speed: ");
-			loadButton = new Button("Load Existing...");
+			setZoom = new Label("Set Zoom Speed: (number > 0, lower is faster)");
+			loadButton = new Button("Load Folder Containing Mandelbrot Images...");
 			playButton = new Button("Play Animation");
-			selectedFolder = new TextField("Input Path"); //toDo: get inputpath
+			selectedFolder = new TextField("Input Path");
 			selectedFolder.setEditable(false);
 			zoomSpeed = new TextField("1.0"); //default zoom speed
 			
 		    //create dropdown
 			createHeader = new Label("Customize Your Mandelbrot");
-		    colorLabel = new Label("Select Colormap: ");
-		    setStart = new Label("Set Starting Zoom: (double between 0 and 3)");
-		    setFinish = new Label("Set Finishing Zoom: (double between 0 and 2.9)");
+		    colorLabel = new Label("Select Colormap: (.txt file containing RGB values)");
+		    setStart = new Label("Set Starting Zoom: (double between 0 and 2)");
+		    setFinish = new Label("Set Finishing Zoom: (double between 0 and 1.9)");
 		    saveToButton = new Button("Save To...");
 		    saveButton = new Button("Render & Save");
 		    chooseColor = new Button("Choose...");
-		    startDouble = new TextField("3.0");
-		    finishDouble = new TextField("0.1");
+		    startDouble = new TextField("2.0");
+		    finishDouble = new TextField("0.01");
 		    outputPath = new TextField("Output Path");
 		    
 		    

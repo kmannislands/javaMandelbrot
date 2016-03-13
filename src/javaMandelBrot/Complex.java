@@ -1,4 +1,8 @@
 /******************************************************************************
+ * This class is included to ease our processing of Complex numbers
+ * From: 
+ * http://introcs.cs.princeton.edu/java/97data/Complex.java.html
+ * 
  *  Compilation:  javac Complex.java
  *  Execution:    java Complex
  *

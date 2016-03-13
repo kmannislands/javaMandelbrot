@@ -5,6 +5,18 @@ import java.util.concurrent.Callable;
 import javafx.animation.Interpolator;
 import javafx.scene.paint.Color;
 
+/**
+ * This class implements java callable to do the
+ * computation and populate a MandArray object
+ * based on parameters rendered over the complex
+ * plane, designed to represent a visualization
+ * of the mandelbrot set.
+ * 
+ * @author Kieran Mann & Seph Martin
+ * @email kmann@ucsd.edu, jbm002@ucsd.edu
+ * @version 1.2
+ *
+ */
 public class Mandelbrot implements Callable<MandArray> {
 	// variables that will be the same for all frames
 	private double xc; // imaginary x-coord
@@ -48,8 +60,17 @@ public class Mandelbrot implements Callable<MandArray> {
   		return maxIter;
   	}
 
+  	/**
+  	 * This class is not used in this deployment, however,
+  	 * will likely be implemented in the future. Smooths
+  	 * and anti-aliases.
+  	 * 
+  	 * @param z0 a Complex number object coordinate
+  	 * @return thisC interpolated color for pixel
+  	 */
   	
   	private Color interpolated(Complex z0) {
+  		// future use method
   		Color thisC = null;
   		double iter = 0;
   		double x = 0.0;
@@ -95,15 +116,11 @@ public class Mandelbrot implements Callable<MandArray> {
     	this.tempMap = tempMap; // define color mapping
   	}
   	
-  	public boolean isFinished() {
-  		// check if the Mandelbrot has finished drawing
-  		return finished;
-  	}
-  	
-  	public double progress() {
-  		double progress = ((double)currentRow / (double)resolution);
-  		return progress;
-  	}
+  	/**
+  	 * This method populates the MandArray with its
+  	 * color 2d array, representing a frame in our
+  	 * animation or a Mandelbrot set.
+  	 */
     
   	private void setMandel() {
   		long startTime = System.nanoTime();
@@ -134,10 +151,23 @@ public class Mandelbrot implements Callable<MandArray> {
   		System.out.println("Finished Mandel for scale: " + size
   				+ " in " + duration/1000000000 + "s");
   	}
+  	
+  	/**
+  	 * This method is used to get the amount of time a 
+  	 * mandelbrot populate took.
+  	 * 
+  	 * @return duration of the Mandelbrot population
+  	 */
 	
   	public long getTime() {
   		return duration;
   	}
+  	
+  	/**
+  	 * Overriden call method to retrun a MandArray
+  	 * 
+  	 * @return MandArray - the key and 2d color array
+  	 */
 
   	@Override
 	public MandArray call() throws Exception{

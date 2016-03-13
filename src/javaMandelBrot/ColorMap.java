@@ -14,6 +14,10 @@ import javafx.scene.paint.Color;
  * a text file where it is stored as lines of 3
  * integers corresponding to rgb values for 255 colors
  * 
+ * @author Kieran Mann & Seph Martin
+ * @email kmann@ucsd.edu, jbm002@ucsd.edu
+ * @version 1.2
+ * 
  */
 
 public class ColorMap {
@@ -23,22 +27,33 @@ public class ColorMap {
     private File swatchPath;
     public String statusStr = null;
     
+    /**
+     * Gets the status of the operation just run
+     * @return statusStr - a string with error reporting
+     */
     public String getStatus() {
     	return statusStr;
     }
+    
+    /**
+     * Constuctor for the colorMap object
+     * @param filePath
+     * @param cachePath
+     */
     
     public ColorMap(File filePath, File cachePath) {
     	this.swatchPath = new File(cachePath.getAbsolutePath()
     			+ "-" + filePath.getName() + ".png");
         this.filePath = filePath;
         statusStr = inputMap();
-        if (statusStr != null)
-        	System.out.println(statusStr); // remove
-        statusStr = outputMap();
-        if (statusStr != null)
-        	System.out.println(statusStr); // remove
+        //statusStr = outputMap();
     }
     
+    /**
+     * Calling this string outputs the map to a png file
+     * 
+     * @return filePath of the image if successful
+     */
     public String outputMap() {
     	statusStr = null;
     	int stripWidth = 100; // pixel width of colorMap
@@ -91,6 +106,13 @@ public class ColorMap {
     	return swatchPath.getAbsolutePath();
     }
     
+    
+    /**
+     * Calling this string causes the specified .txt file of
+     * RGB values to be read in as color array for temp mapping
+     * 
+     * @return statusStr - errors and alerts
+     */
     public String inputMap() {
     	String statusStr = null;
     	BufferedReader readIn = null;
@@ -141,6 +163,13 @@ public class ColorMap {
     	
     	return statusStr;
     }
+    
+    /**
+     * This method is used to interface with the stored color array
+     * 
+     * @param cValue the 1-255 value to temp map
+     * @return a color representing the temp on this mapping
+     */
     
     public Color getColor(int cValue) {
         // take an int, return a color from the temperature mapping

@@ -25,6 +25,10 @@ import javafx.scene.paint.Color;
 /**
  * RenderFrames is the class that controls the rendering
  * and then drawing to Images of Mandelbrot frames.
+ * 
+ * @author Kieran Mann & Seph Martin
+ * @email kmann@ucsd.edu, jbm002@ucsd.edu
+ * @version 1.2
  */
 
 public class RenderFrames extends Thread {

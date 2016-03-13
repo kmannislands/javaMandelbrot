@@ -18,15 +18,6 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-/**
- * This class is used to create and open a pane of 
- * our pre-cached Mandelbrot zoom animation.
- * 
- * @author Kieran Mann & Seph Martin
- * @email kmann@ucsd.edu, jbm002@ucsd.edu
- * @version 1.2
- */
-
 public class animationPlayer {
 	private final int HEIGHT = 512;
 	private final int WIDTH = 512;
@@ -59,31 +50,25 @@ public class animationPlayer {
     	return logoV;
     }
 	
-	/**
-	 * This class constructs an animation player object.
-	 * 
-	 * @param frames - ArrayList of frame files
-	 * @param SPEED - double value representing seconds/200%
-	 */
-	
 	public animationPlayer(List<File> frames, double SPEED) {
 		this.SPEED = SPEED;
 		this.frames = frames;
 		pane = new StackPane();
-		frameIter = frames.iterator();
+		Scene scene = new Scene(pane, 512, 512);
+		Stage primaryStage = new Stage();
 		
+		primaryStage.setScene(scene);
+		
+		//ImageView lastImg = null;
+		double thisTime = 0.0;
+		
+		frameIter = frames.iterator();
+		addFrames(frameIter.next());
+		primaryStage.show();
 	}
-	
-	/**
-	 * This function uses recursion to iterate over
-	 * the png files provided and animate
-	 * 
-	 * @param thisFile a sorted ArrayList of files
-	 */
 	private void addFrames(File thisFile) {
 		ImageView thisImg = null;
 		thisImg = nextFrame(thisFile);
-		
 		// starting keyframe
 		KeyValue startX = new KeyValue(thisImg.scaleXProperty(), 0.5);
 		KeyValue startY = new KeyValue(thisImg.scaleYProperty(), 0.5);
@@ -107,39 +92,31 @@ public class animationPlayer {
 		// continue to zoom 
 		KeyValue nextX = new KeyValue(thisImg.scaleXProperty(), 2.0);
 		KeyValue nextY = new KeyValue(thisImg.scaleYProperty(), 2.0);
-		KeyFrame nextF = new KeyFrame(new Duration(SPEED*2.0), nextX, nextY);
+		KeyFrame nextF = new KeyFrame(new Duration(SPEED*2.0), 
+				new EventHandler<ActionEvent>() {
+					public void handle(ActionEvent event) {
+						if (frameIter.hasNext())
+							// get rid of this frame once it's done
+							try {
+								pane.getChildren().remove(stackIndex);
+							} catch (Exception e) {
+								System.out.println("Problem #2");
+							}
+					}
+		}, nextX, nextY);
 		// eventhandler to remove this frame here
 		
 		Timeline timeline = new Timeline();
 		
-		// add keyframes to timeline
 		timeline.getKeyFrames().addAll(startF, endF, nextF);
 		timeline.autoReverseProperty().set(false);
-		
-		//System.out.println("Adding " + thisImg.toString() );
-		
-		// add the image to the stack pane
+		System.out.println("Adding " + thisImg.toString() );
 		pane.getChildren().add(thisImg);
-		
-		// start the animation on this frame
 		timeline.play();
 		stackIndex++;
 	}
-	
-	/**
-	 * This method starts the animation and shows the stage
-	 * 
-	 * @throws Exception
-	 */
-	
-	public void showStage() throws Exception {
-			Scene scene = new Scene(pane, 512, 512);
-			Stage primaryStage = new Stage();
-		
-			primaryStage.setScene(scene);
-		
-			addFrames(frameIter.next());
-			primaryStage.show(); 
+
+	public static void showStage() {
 	}
 }
 
