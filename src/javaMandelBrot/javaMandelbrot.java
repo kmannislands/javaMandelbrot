@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
@@ -196,28 +198,44 @@ public class javaMandelbrot extends Application{
                 	loadDir = load.showDialog(applicationStage.getOwner());
                 	outputPath.setText(loadDir.getAbsolutePath()); //updates output path
                 } catch (Exception e1) {
-                	e1.printStackTrace();
                 	createAlert("Please Select a Directory!");
                 	//return;
                 }
-                File[] dirContents = loadDir.listFiles(new FileFilter() {
-                	@Override
-                	public boolean accept(File file) {
-                	    if (file.isDirectory()) {
-                	      return false;
-                	    } else {
-                	    	if(file.getName().contains(".png")) {
-                	    	// png image file, return true
-                	    	  return true;
+                try {
+                	File[] dirContents = loadDir.listFiles(new FileFilter() {
+                		@Override
+                		public boolean accept(File file) {
+                			if (file.isDirectory()) {
+                				return false;
+                			} else {
+                				if(file.getName().contains(".png")) {
+                	    		// png image file, return true
+                					return true;
+                				}
+            				return false;
                 	    	}
-                	      return false;
-                	    }
-                	}
-                });
-                for (File thisFile : dirContents) {
-        			fileList.add(thisFile); // add png's to list
-        		}
+                		}
+                	});
+                	for (File thisFile : dirContents) {
+                		fileList.add(thisFile); // add png's to list
+        			}
+                } catch (Exception e) {
+                	
+                }
                 if (!fileList.isEmpty()) {
+                	Collections.sort(fileList, new Comparator<File>() {
+
+						@Override
+						public int compare(File o1, File o2) {
+							// compare two files!
+							String suffix1 = o1.getName().split("-")[1].replaceAll(".png","");
+							String suffix2 = o2.getName().split("-")[1].replaceAll(".png","");
+							Integer suf1 = Integer.parseInt(suffix1);
+							Integer suf2 = Integer.parseInt(suffix2);
+							return suf1.compareTo(suf2);
+						}
+                		
+                	});
                 	double zoomS = 
                 			Double.parseDouble(zoomSpeed.getText()) * 1000;
                 	animationPlayer thisWindow = new animationPlayer(fileList, zoomS);
@@ -307,84 +325,81 @@ public class javaMandelbrot extends Application{
 	@Override
 	public void start(Stage applicationStage) {
 		this.applicationStage = applicationStage;
-		applicationStage.setTitle("Mandelbrot Animation Generator");
-		GridPane gridPane1 = new GridPane();
-		gridPane1.setStyle("-fx-background-color: #06060A");
-		GridPane gridPane2 = new GridPane();
-	   	gridPane2.setStyle("-fx-background-color: #252529");
+		 applicationStage.setTitle("Mandelbrot Animation Generator");
+		   GridPane gridPane1 = new GridPane();
+		   GridPane gridPane2 = new GridPane();
+		   gridPane2.setStyle("-fx-background-color: #1d1d1d");
 
-		//application page
-		welcomeLabel = new Label("Welcome, what would you like to do?");
-		selectedAnimation = new Label("Selected Animation: ");
-		setZoom = new Label("Set Zoom Speed: ");
-		loadButton = new Button("Load Existing...");
-		playButton = new Button("Play Animation");
-		selectedFolder = new TextField("Input Path"); //toDo: get inputpath
-		selectedFolder.setEditable(false);
-		zoomSpeed = new TextField("1.0"); //default zoom speed
-		
-	    //create dropdown
-		createHeader = new Label("Customize Your Mandelbrot");
-	    colorLabel = new Label("Select Colormap: ");
-	    setStart = new Label("Set Starting Zoom: (double between 0 and 3)");
-	    setFinish = new Label("Set Finishing Zoom: (double between 0 and 2.9)");
-	    saveToButton = new Button("Save To...");
-	    saveButton = new Button("Render & Save");
-	    chooseColor = new Button("Choose...");
-	    startDouble = new TextField("3.0");
-	    finishDouble = new TextField("0.1");
-	    outputPath = new TextField(cacheDir.getName());
-	    
-	    
-	    //construct titled panes for accordion
-	    TitledPane t1 = new TitledPane("Create a New Mandelbrot Animation", gridPane2);
-	    t2 = new TitledPane("Load Existing Mandelbrot Animation", loadButton);
+			//application page
+			welcomeLabel = new Label("Welcome, what would you like to do?");
+			selectedAnimation = new Label("Selected Animation: ");
+			setZoom = new Label("Set Zoom Speed: ");
+			loadButton = new Button("Load Existing...");
+			playButton = new Button("Play Animation");
+			selectedFolder = new TextField("Input Path"); //toDo: get inputpath
+			selectedFolder.setEditable(false);
+			zoomSpeed = new TextField("1.0"); //default zoom speed
+			
+		    //create dropdown
+			createHeader = new Label("Customize Your Mandelbrot");
+		    colorLabel = new Label("Select Colormap: ");
+		    setStart = new Label("Set Starting Zoom: (double between 0 and 3)");
+		    setFinish = new Label("Set Finishing Zoom: (double between 0 and 2.9)");
+		    saveToButton = new Button("Save To...");
+		    saveButton = new Button("Render & Save");
+		    chooseColor = new Button("Choose...");
+		    startDouble = new TextField("3.0");
+		    finishDouble = new TextField("0.1");
+		    outputPath = new TextField("Output Path");
+		    
+		    
+		    //construct titled panes for accordion
+		    TitledPane t1 = new TitledPane("Create a New Mandelbrot Animation", gridPane2);
+		    t1.setPadding(new Insets(3));
+		    TitledPane t2 = new TitledPane("Load Existing Mandelbrot Animation", loadButton);
+		    t2.setPadding(new Insets(3));
+		    t2.setMinHeight(200);
+		    
+		    //construct accordion
+		    Accordion accordion = new Accordion();
+		    accordion.getPanes().addAll(t1, t2);
+		    accordion.setMinHeight(t1.getMinHeight());
+		    	    
+		    //position page
+			gridPane1.setHgap(5);
+			gridPane1.setVgap(15);
+			gridPane1.setPadding(new Insets(6));
+			gridPane1.add(welcomeLabel, 0, 1);
+			gridPane1.add(accordion, 0, 3);
+			gridPane1.add(selectedAnimation, 0, 4);
+			gridPane1.add(setZoom, 0, 5);
+			gridPane1.add(playButton, 0, 6);
+			gridPane1.add(selectedFolder, 1, 4);
+			gridPane1.add(zoomSpeed, 1, 5);
 
+		    //position create drop-down
+			gridPane2.setHgap(3);
+		    gridPane2.setVgap(6);
+		    gridPane2.setPadding(new Insets(2));
+		    gridPane2.add(createHeader, 0, 0);
+		    gridPane2.add(colorLabel, 0, 1);
+		    gridPane2.add(setStart, 0, 2);
+		    gridPane2.add(setFinish, 0, 3);
+		    gridPane2.add(saveToButton, 0, 4);
+		    gridPane2.add(saveButton, 0, 5);
+		    gridPane2.add(chooseColor, 1, 1);
+		    gridPane2.add(startDouble, 1, 2);
+		    gridPane2.add(finishDouble, 1, 3);
+		    gridPane2.add(outputPath, 1, 4);   
 
-	    
-	    //construct accordion
-	    Accordion accordion = new Accordion();
-		accordion.setStyle("-fx-focus-color: #252529"
-				+ "-fx-skin-color: #FFAAAA");
-	    accordion.getPanes().addAll(t1, t2);
-	    accordion.setMinHeight(t1.getMinHeight());
-		accordion.setStyle("-fx-expanded-background-color: #FFAAAA !important");
-
-	    	    
-	    //position page
-		gridPane1.setHgap(5);
-		gridPane1.setVgap(10);
-		gridPane1.setPadding(new Insets(3));
-		gridPane1.add(welcomeLabel, 0, 1);
-		gridPane1.add(accordion, 0, 3);
-		gridPane1.add(selectedAnimation, 0, 4);
-		gridPane1.add(setZoom, 0, 5);
-		gridPane1.add(playButton, 0, 6);
-		gridPane1.add(selectedFolder, 1, 4);
-		gridPane1.add(zoomSpeed, 1, 5);
-
-	    //position create drop-down
-		gridPane2.setHgap(3);
-	    gridPane2.setVgap(6);
-	    gridPane2.setPadding(new Insets(2));
-	    gridPane2.add(createHeader, 0, 0);
-	    gridPane2.add(colorLabel, 0, 1);
-	    gridPane2.add(setStart, 0, 2);
-	    gridPane2.add(setFinish, 0, 3);
-	    gridPane2.add(saveToButton, 0, 4);
-	    gridPane2.add(saveButton, 0, 5);
-	    gridPane2.add(chooseColor, 1, 1);
-	    gridPane2.add(startDouble, 1, 2);
-	    gridPane2.add(finishDouble, 1, 3);
-	    gridPane2.add(outputPath, 1, 4);   
-
-	    //Set Scene
-		Scene scene = new Scene(gridPane1, WIDTH, HEIGHT);
-		applicationStage.setScene(scene);
-		applicationStage.show();
-		
-		//Program buttons
-		addButtonActions();
+		    //Set Scene
+			Scene scene = new Scene(gridPane1, WIDTH, HEIGHT);
+			scene.getStylesheets().add((this.getClass().getResource("ControlStyle.css")).toExternalForm());
+			applicationStage.setScene(scene);
+			applicationStage.show();
+			
+			//Program buttons
+			addButtonActions();
 	}
 	
 	public static void main(String[] args) {

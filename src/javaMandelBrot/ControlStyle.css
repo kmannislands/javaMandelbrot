@@ -1,0 +1,54 @@
+.root {
+	-fx-background-color: #1d1d1d;
+}
+
+.label {
+	-fx-font-size: 11pt;
+	-fx-text-fill: #d8d8d8;
+	}
+
+.button {
+    -fx-padding: 5 22 5 22;   
+    -fx-border-color: #e2e2e2;
+    -fx-border-width: 2;
+    -fx-background-radius: 0;
+    -fx-background-color: #1d1d1d;
+    -fx-font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+    -fx-font-size: 11pt;
+    -fx-text-fill: #d8d8d8;
+    -fx-background-insets: 0 0 0 0, 0, 1, 2;
+    }
+
+.button: hover {
+	-fx-background-color: #C70035;
+	-fx-text-fill: #000000;
+	-fx-border-color: #000000;
+	}
+.button: selected {
+	-fx-background-color: #C70035;
+	-fx-text-fill: #000000;
+	-fx-border-color: #000000;
+	}
+
+.accordion {
+	-fx-focus-color: #C70035;
+	}
+	
+.titled-pane .title {
+	-fx-background-color: #101010;
+		-fx-font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+    -fx-font-size: 11pt;
+    -fx-text-fill: #d8d8d8;
+	}
+	
+.titled-pane .content {
+	-fx-background-color: #1d1d1d;
+	}
+
+.text-field {
+	-fx-background-color: #1F1F1F;
+	-fx-text-fill: #C70035;
+	-fx-font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+    -fx-font-size: 11pt;
+	
+	}
