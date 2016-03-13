@@ -45,18 +45,23 @@ public class RenderFrames extends Thread {
 	// This arraylist contains all of the zoom constants to use
 	private ArrayList<Double> zooms;
 	private int numFrames = 0;
-	
-	public String[] returnInfo() {
-		String[] renderInfo = new String[4];
-		renderInfo[0] = "Prefix: " + prefix;
-		
-		return renderInfo;
-	}
-	
+
+	/**
+	 * Public method to remove a mandelbrot at a Key
+	 * 
+	 * @param key
+	 */
 	public void removeMand(Integer key) {
 		allMandels.remove(key);
 	}
 	
+	/**
+	 * Populates the Arraylist of zoom rates and determines
+	 * how many frames will be needed to accomplish the
+	 * animation
+	 * 
+	 * @return iters - the number of zoom points required
+	 */
 	private int numFrames() {
 		zooms = new ArrayList<>();
 		int iters = 1;
@@ -74,10 +79,12 @@ public class RenderFrames extends Thread {
 	}
 
 	/**
-	 * @param x - x starting location for the arc
-	 * @param y - y starting location for the arc
-	 * @param canvas - the canvas to draw the arc in. Should be
-	 * provided by objectdraw
+	 * Constructor for the RenderFrames Thread class
+	 * 
+	 * @param initZoom
+	 * @param endZoom
+	 * @param prefix
+	 * @param colorMap
 	 */
 	public RenderFrames(double initZoom, double endZoom, String prefix, String colorMap) {
 		this.initZoom = initZoom;
@@ -86,6 +93,12 @@ public class RenderFrames extends Thread {
 		this.colorMap = new ColorMap(colorMap);
 	}
 	
+	/**
+	 * This method writes out MandArrays to PNG files
+	 * 
+	 * @param thisMandl a MandArray object to write
+	 * @return statusStr debug/flagging string
+	 */
 	private String writeOut(MandArray thisMandl) {
 		Color[][] thisPic = thisMandl.pic;
 		// and this Mandel's key
@@ -142,7 +155,9 @@ public class RenderFrames extends Thread {
 	}
 	
   /**
-   * 
+   * The main method for the thread. Creates sub-callables
+   * that do the mandelbrot math and then draws them out as
+   * they are returned.
    */
   @Override
   public void run() {
@@ -165,9 +180,9 @@ public class RenderFrames extends Thread {
 		  i++;
 	  }
 	  
-	  
 	  ExecutorService pool = Executors.newWorkStealingPool(numFrames);
 	  List<Future<MandArray>> futureFrames = new ArrayList<>();
+	  
 	  try {
 		  // Now, all the Mandelbrots are in our HashMap
 		  // so let's add them to the pool and start them
@@ -184,68 +199,35 @@ public class RenderFrames extends Thread {
 		  // Problem starting threads
 		  e.printStackTrace();
 	  }
-	  // cycle through our mandlebrot callable futures
-	  for(Future<MandArray> fut : futureFrames) {
-		  MandArray pic = null;
-		  String str = null;
-		  try {
-			  pic = fut.get();
-			  str = writeOut(pic);
-		  } catch (Exception e) {
-			  System.out.println("Get problem!");
-			  e.printStackTrace();
+	  
+	  boolean isComplete = false; // track if we've printed all yet
+	  
+	  while (!isComplete) {
+		  String str = null; // new status str for each
+		  // cycle through our mandlebrot callable futures
+		  for(Future<MandArray> fut : futureFrames) {
+			  // loop through the future array
+				  if(fut.isDone()) {
+					  try {
+						  str = writeOut(fut.get());
+						  futureFrames.remove(fut);
+						  break;
+					  } catch (Exception f ) {
+						  f.printStackTrace();
+					  }
+				  } else {
+					  continue;
+				  }
 		  }
-		  if (str != null)
+		  if (str != null) {
+			  // print any problems with write
 			  System.out.println(str);
-		  
-	  }
-	  //System.out.println("Started all threads!");
-	  
-/*
-	  String writeStr = null;
-	  try {
-		  // render for up to 30 minutes
-		  System.out.println("Awaiting termination...");
-		  pool.awaitTermination(30, TimeUnit.MINUTES);
-	  } catch (Exception e) {
-		  writeStr = "Render Timed Out! Thanks for hanging in there. Sorry Champ.";
-	  }
-	  System.out.println("Exited try!");
-	  try {
-	  	// and then, iterate through again, writing out
-		  Iterator<Entry<Integer, Mandelbrot>> imageWrite =
-				  allMandels.entrySet().iterator();
-		  long start = System.nanoTime();
-		  int l = 1;
-		  while (imageWrite.hasNext()) {
-			  Entry<Integer, Mandelbrot> thisEntry =
-					  imageWrite.next();
-			  // write out each Mandelbrot
-			  System.out.println("Writing " + l + ".png" );
-			  writeStr = writeOut(thisEntry);
-			  l++;
 		  }
-		  if (writeStr != null) {
-			  System.out.println("Problem writing out Mandelbrot PNG's\n\n"
-					  + writeStr);
-		  } else {
-			  long writeTime = System.nanoTime() - start;
-			  System.out.println("Wrote " + l + " Mandelbrot PNG's"
-					  + " in " + writeTime/1000000000 + "s");
+		  if (futureFrames.isEmpty()) {
+			  // if our frame list is empty, exit loop
+			  isComplete = true;
 		  }
-	  } catch (Exception e) {
-		  // TODO Auto-generated catch block
-		  System.out.println("Problem writing out Mandelbrot PNG's");
-		  e.printStackTrace();
-	  }*/
-	  
-	  
-	  
-			  
-	  /*System.out.println("Mandel #" + thisMand.getKey()
-			  + " finished in: " + 
-			  (thisMand.getValue().getTime()) /1000000000
-			  + "s \n\n");*/
+	  }
   }
 
 }

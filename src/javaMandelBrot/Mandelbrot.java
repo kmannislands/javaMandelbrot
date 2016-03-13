@@ -127,8 +127,7 @@ public class Mandelbrot implements Callable<MandArray> {
   			}
   			currentRow++;
   		}
-  		
-  		this.pic.pic = temp;
+  		this.pic = new MandArray(temp, key);
   		
   		endTime = System.nanoTime();
   		duration = (endTime - startTime);
