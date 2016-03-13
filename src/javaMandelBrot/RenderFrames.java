@@ -39,6 +39,7 @@ public class RenderFrames extends Thread {
 	private double endZoom;
 	private ColorMap colorMap; // file path of color map to use
 	private String prefix; // the prefix to use in naming out
+	private File cacheDir;
   
 	// The HashMap containing all of our Mandelbrot Objects
 	private Map<Integer, Mandelbrot> allMandels = new HashMap<>();
@@ -86,11 +87,13 @@ public class RenderFrames extends Thread {
 	 * @param prefix
 	 * @param colorMap
 	 */
-	public RenderFrames(double initZoom, double endZoom, String prefix, String colorMap) {
+	public RenderFrames(double initZoom, double endZoom, 
+			String prefix, ColorMap colorMap, File cacheDir) {
 		this.initZoom = initZoom;
 		this.endZoom = endZoom;
-		this.prefix = prefix;
-		this.colorMap = new ColorMap(colorMap);
+		this.prefix = "frame";
+		this.colorMap = colorMap;
+		this.cacheDir = cacheDir;
 	}
 	
 	/**
@@ -127,8 +130,8 @@ public class RenderFrames extends Thread {
 		
 		// if we've gotten here, we have an image ready to write
 		// TODO figure out file path solution for real
-		String filePath = "/users/kieranjarrett/Documents/cache/"
-				+ prefix + thisKey + ".png";
+		String filePath = cacheDir.getAbsolutePath() + "/"
+				+ prefix + "-" + thisKey + ".png";
 		
 		FileOutputStream os = null;
 		try {

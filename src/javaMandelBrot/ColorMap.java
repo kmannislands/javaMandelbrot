@@ -19,14 +19,17 @@ import javafx.scene.paint.Color;
 public class ColorMap {
     private Color thisColor;
     private Color[] tempMap = new Color[255];
-    private String filePath;
+    private File filePath;
+    private File swatchPath;
     public String statusStr = null;
     
     public String getStatus() {
     	return statusStr;
     }
     
-    public ColorMap(String filePath) {
+    public ColorMap(File filePath, File cachePath) {
+    	this.swatchPath = new File(cachePath.getAbsolutePath()
+    			+ "-" + filePath.getName() + ".png");
         this.filePath = filePath;
         statusStr = inputMap();
         if (statusStr != null)
@@ -63,7 +66,6 @@ public class ColorMap {
 		// if we've gotten here, we have an image ready to write
 		// TODO figure out file path solution for real
 		String swatchName = "swatch-1"; // get rid of .txt
-		String swatchPath = "/users/kieranjarrett/Documents/" + swatchName + ".png";
 		
 		FileOutputStream os = null;
 		try {
@@ -74,7 +76,7 @@ public class ColorMap {
 			SwingFXUtils.fromFXImage(image, bi);
 			
 			//graph.translate(x, y);
-			ImageIO.write(bi, "PNG", new File(swatchPath));
+			ImageIO.write(bi, "PNG", swatchPath);
 			
 		} catch (Exception e) {
 			statusStr = "Couldn't write out frames to cache.";
@@ -86,7 +88,7 @@ public class ColorMap {
 			}
 		}
     	
-    	return statusStr;
+    	return swatchPath.getAbsolutePath();
     }
     
     public String inputMap() {

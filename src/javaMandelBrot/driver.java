@@ -1,9 +1,9 @@
 package javaMandelBrot;
 
+import java.io.File;
+
 public class driver {
 	public static void main(String[] args) {
-		Thread test = new RenderFrames(1.0, .0001, "mandel",
-				"/users/kieranjarrett/Documents/CSE11/Mandelbrot/mandel.txt");
-		test.start();
+		
 	}
 }

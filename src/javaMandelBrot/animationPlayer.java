@@ -11,7 +11,6 @@ import javafx.event.EventHandler;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
-import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -19,7 +18,7 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-public class animationPlayer extends Application {
+public class animationPlayer {
 	private final int HEIGHT = 512;
 	private final int WIDTH = 512;
 	private List<File> frames = new ArrayList<>();
@@ -51,17 +50,21 @@ public class animationPlayer extends Application {
     	return logoV;
     }
 	
-	public animationPlayer() {
-	//public animationPlayer(ArrayList<File> frames, double speed) {
-		File frame1 = new File("/users/kieranjarrett/Documents/"
-				+ "cache/mandel1.png");
-		File frame2 = new File("/users/kieranjarrett/Documents/"
-				+ "cache/mandel2.png");
-		this.frames.add(frame1);
-		this.frames.add(frame2);
-		SPEED = 5000.0;
-		//this.SPEED = SPEED;
-		//this.frames = frames;
+	public animationPlayer(List<File> frames, double SPEED) {
+		this.SPEED = SPEED;
+		this.frames = frames;
+		pane = new StackPane();
+		Scene scene = new Scene(pane, 512, 512);
+		Stage primaryStage = new Stage();
+		
+		primaryStage.setScene(scene);
+		
+		//ImageView lastImg = null;
+		double thisTime = 0.0;
+		
+		frameIter = frames.iterator();
+		addFrames(frameIter.next());
+		primaryStage.show();
 	}
 	private void addFrames(File thisFile) {
 		ImageView thisImg = null;
@@ -94,7 +97,11 @@ public class animationPlayer extends Application {
 					public void handle(ActionEvent event) {
 						if (frameIter.hasNext())
 							// get rid of this frame once it's done
-							pane.getChildren().remove(stackIndex);
+							try {
+								pane.getChildren().remove(stackIndex);
+							} catch (Exception e) {
+								System.out.println("Problem #2");
+							}
 					}
 		}, nextX, nextY);
 		// eventhandler to remove this frame here
@@ -109,21 +116,7 @@ public class animationPlayer extends Application {
 		stackIndex++;
 	}
 
-	@Override
-	public void start(Stage primaryStage) throws Exception {
-		pane = new StackPane();
-		Scene scene = new Scene(pane, 512, 512);
-		primaryStage.setScene(scene);
-		primaryStage.show();
-		//ImageView lastImg = null;
-		double thisTime = 0.0;
-		
-		frameIter = frames.iterator();
-		addFrames(frameIter.next());
-	}
-	
-	public static void main(String[] args) {
-		launch(args);
+	public static void showStage() {
 	}
 }
 
